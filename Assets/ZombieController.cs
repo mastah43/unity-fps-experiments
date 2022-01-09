@@ -8,20 +8,20 @@ public class ZombieController : MonoBehaviour
 
 
     Transform head;
-    Transform legLeft;
-    Transform legRight;
+    Transform legLeftJoint;
+    Transform legRightJoint;
 
     void Start()
     {
-        head = transform.Find("Body/Head");
-        legLeft = transform.Find("Body/LegLeft");
-        legRight = transform.Find("Body/LegRight");
+        head = transform.Find("Head");
+        legLeftJoint = transform.Find("LegLeftJoint");
+        legRightJoint = transform.Find("LegRightJoint");
     }
 
     void Update()
     {
         head.Rotate(0, 45f * (float)Math.Sin(Time.time) * Time.deltaTime, 0, Space.Self);
-        legLeft.Rotate(45f * (float)Math.Sin(Time.time) * Time.deltaTime, 0, 0, Space.Self);
-        legRight.Rotate(-45f * (float)Math.Sin(Time.time) * Time.deltaTime, 0, 0, Space.Self);
+        legLeftJoint.Rotate(45f * (float)Math.Sin(Time.time) * Time.deltaTime, 0, 0, Space.Self);
+        legRightJoint.Rotate(-45f * (float)Math.Sin(Time.time) * Time.deltaTime, 0, 0, Space.Self);
     }
 }
