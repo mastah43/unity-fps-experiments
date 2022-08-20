@@ -16,7 +16,10 @@ public class ZombieController : MonoBehaviour
         public float bodyUp;
     }
 
+    [Tooltip("Position the zombie should walk to")]
     public Transform goal;
+
+    [Tooltip("Walk leg angle maximum")]
     public double legWalkAngle = 15;
 
     private Transform body;

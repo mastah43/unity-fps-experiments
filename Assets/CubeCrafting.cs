@@ -19,15 +19,11 @@ public class CubeCrafting : MonoBehaviour
     float boxSize;
 
 
-    // Start is called before the first frame update
     void Start()
     {
-        boxSize = 0.5f;
-        // TODO how to dynamically get the size of the cube?
-        // boxSize = GetComponent<Renderer>().bounds.extents.x/2.0f;
+        boxSize = boxBlueprint.transform.localScale.x;
     }
 
-    // Update is called once per frame
     void Update()
     {
         if (Time.time - timeLastCraft > timeSecsCraft)
