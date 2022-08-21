@@ -13,7 +13,11 @@ public class ZombieController : MonoBehaviour
     {
         public float LegRotate;
         public float ArmRotate;
+        public float FootRotate;
         public float BodyUp;
+        public float BodyForward;
+        public float BodyForwardTotal;
+        public double StepsWalked;
     }
 
     [Tooltip("Position the zombie should walk to")]
@@ -38,7 +42,7 @@ public class ZombieController : MonoBehaviour
     private Transform footLeft;
     private Transform footRight;
 
-    private double timeWalkStarted = -1;
+    private WalkMovement walkMovement = new WalkMovement();
 
     private float legLength;
     private NavMeshAgent agent;
@@ -69,9 +73,6 @@ public class ZombieController : MonoBehaviour
 
         agent = GetComponent<NavMeshAgent>();
         agent.destination = goal.position;
-
-        // since we run animations for walking, position will be updated by controller
-        agent.updatePosition = false;
     }
 
     void Update()
@@ -81,8 +82,11 @@ public class ZombieController : MonoBehaviour
 
     private void Walk()
     {
-        var worldDeltaPosition = agent.nextPosition - transform.position;
+        // TODO make actor stand with arms down and legs down and not split when movement comes to a stop
+        // TODO make leg angle larger and shorter dependent on agent speed
 
+        /*
+        var worldDeltaPosition = agent.nextPosition - transform.position;
         // Map 'worldDeltaPosition' to local space
         var dx = Vector3.Dot(transform.right, worldDeltaPosition);
         var dy = Vector3.Dot(transform.forward, worldDeltaPosition);
@@ -99,106 +103,76 @@ public class ZombieController : MonoBehaviour
             velocity = smoothDeltaPosition / Time.deltaTime;
 
         bool shouldMove = velocity.magnitude > 0.5f && agent.remainingDistance > agent.radius;
+        */
 
         // TODO move head in the direction of turning in a separate controller
         //GetComponent<LookAt>().lookAtTargetPosition = agent.steeringTarget + transform.forward;
-        */
 
-        if (timeWalkStarted < 0)
-        {
-            timeWalkStarted = Time.time;
-        }
+        UpdateWalkMovement(ref walkMovement);
+        Logger.Log($"Walk at time={Time.time}: agent velocity={agent.velocity.magnitude}"
+                   + $", bodyUp={walkMovement.BodyUp}, bodyForward={walkMovement.BodyForward}"  
+                   + $", BodyForwardTotal={walkMovement.BodyForwardTotal}");
+        
+        ApplyWalkMovement();
+    }
 
-        var footLeftDistanceBefore = LeftFootFrontDistance();
-        var footRightDistanceBefore = RightFootFrontDistance();
-
+    private void ApplyWalkMovement()
+    {
         // rotate legs
-        var walkMovement = GetWalkMovement();
-        var legRotate = walkMovement.LegRotate;
-        legLeftJoint.Rotate(legRotate, 0, 0, Space.Self);
-        legRightJoint.Rotate(-legRotate, 0, 0, Space.Self);
+        legLeftJoint.Rotate(walkMovement.LegRotate, 0, 0, Space.Self);
+        legRightJoint.Rotate(-walkMovement.LegRotate, 0, 0, Space.Self);
 
         // rotate feet
-        footLeftJoint.Rotate(-legRotate, 0, 0, Space.Self);
-        footRightJoint.Rotate(legRotate, 0, 0, Space.Self);
+        footLeftJoint.Rotate(walkMovement.FootRotate, 0, 0, Space.Self);
+        footRightJoint.Rotate(-walkMovement.FootRotate, 0, 0, Space.Self);
 
         // rotate arms
-        armLeftJoint.Rotate(-walkMovement.ArmRotate, 0, 0, Space.Self);
-        armRightJoint.Rotate(walkMovement.ArmRotate, 0, 0, Space.Self);
+        armLeftJoint.Rotate(walkMovement.ArmRotate, 0, 0, Space.Self);
+        armRightJoint.Rotate(-walkMovement.ArmRotate, 0, 0, Space.Self);
 
         // body move forward / backward
-        // agent moves already forward but we need to correct the movement of the body
-        // since the body is not moving linearly but more like in a sine curve
-        var footLeftDistanceDelta = Math.Abs(LeftFootFrontDistance() - footLeftDistanceBefore);
-        var footRightDistanceDelta = Math.Abs(RightFootFrontDistance() - footRightDistanceBefore);
-        var walkDistance = Math.Max(footLeftDistanceDelta, footRightDistanceDelta);
-        var walkDelta = walkDistance - agent.velocity.magnitude*Time.deltaTime;
-        body.Translate(Vector3.forward * walkDelta);
-
-        /* TODO remove or use log levels
-        logger.Log($"Walk at time={Time.time}: agent speed={agent.velocity.magnitude}, foot delta: left={footLeftDistanceDelta}, right={footRightDistanceDelta},"
-            + $" foot before: left={footLeftDistanceBefore}, right={footRightDistanceBefore},"
-            + $" leg join rotation x: left={legLeftJoint.localRotation.x}, right={legRightJoint.localRotation.x }");
-        */
+        body.Translate(Vector3.forward * walkMovement.BodyForward);
 
         // move body up / down
         body.Translate(Vector3.up * walkMovement.BodyUp);
-
-        // TODO
-        //Logger.Log($"body move: fwd/bckwd: walkDelta={walkDelta}, walkDistance={walkDistance}, agent.velocity.magnitude={agent.velocity.magnitude}; up/down: {walkMovement.BodyUp}");
-
-        transform.position = agent.nextPosition;
     }
 
-    private WalkMovement GetWalkMovement()
+    private void UpdateWalkMovement(ref WalkMovement movement)
     {
-        var walkMovement = new WalkMovement();
-
         var footFrontDistanceMax = Math.Sin(legWalkAngle) * legLength;
-        var stepMoveForward = footFrontDistanceMax * 2;
+        var stepMoveForward = footFrontDistanceMax; 
         var stepsPerSec = agent.velocity.magnitude / stepMoveForward;
-        var stepRadPerSec = (double)stepsPerSec * Math.PI * 2d;
-        var timeWalked = Time.time - timeWalkStarted;
-        var timeWalkedBeforeUpdate = timeWalked - Time.deltaTime;
-        double legRotation = this.walkLegRotation(stepRadPerSec, timeWalked);
-        double legRotationBeforeUpdate = this.walkLegRotation(stepRadPerSec, timeWalkedBeforeUpdate);
+        
+        double legRotationBeforeUpdate = this.WalkLegRotation(movement.StepsWalked);
+        
+        var stepsWalkDelta = stepsPerSec * Time.deltaTime;
+        movement.StepsWalked += stepsWalkDelta;
+        double legRotation = this.WalkLegRotation(movement.StepsWalked);
 
-        // TODO
-        //Logger.Log($"walk movement: footFrontDistanceMax={footFrontDistanceMax}, walkStepsPerSec={stepsPerSec}");
-
-        walkMovement.LegRotate = (float)(legRotationBeforeUpdate - legRotation);
-        walkMovement.ArmRotate = walkMovement.LegRotate;
+        movement.LegRotate = (float)(legRotation - legRotationBeforeUpdate);
+        movement.FootRotate = movement.LegRotate;
+        movement.ArmRotate = -movement.LegRotate;
 
         // when legs split for walk step forward / backward then body moves down
-        var bodyMoveYBeforeUpdate = -legLength * (1 - Math.Cos(degreesToRand(legRotationBeforeUpdate)));
-        var bodyMoveY = -legLength * (1 - Math.Cos(degreesToRand(legRotation)));
-        walkMovement.BodyUp = (float)(bodyMoveY - bodyMoveYBeforeUpdate);
-
-        return walkMovement;
+        var bodyMoveYBeforeUpdate = -legLength * (1 - Math.Cos(DegreesToRand(legRotationBeforeUpdate)));
+        var bodyMoveY = -legLength * (1 - Math.Cos(DegreesToRand(legRotation)));
+        movement.BodyUp = (float)(bodyMoveY - bodyMoveYBeforeUpdate);
+        
+        // realistically move body forward / backward to adapt continues agent movement by realistic 
+        // alternating walking speed due to steps
+        var footDistanceDelta = Math.Abs(FootDistanceByLegRotation(legRotation) - FootDistanceByLegRotation(legRotationBeforeUpdate));
+        var agentDistanceDelta = agent.velocity.magnitude * Time.deltaTime;
+        movement.BodyForward = footDistanceDelta - agentDistanceDelta;
+        movement.BodyForwardTotal += movement.BodyForward;
     }
 
-    private static double degreesToRand(double degrees)
-    {
-        return degrees / 180d * Math.PI;
-    }
+    private static double DegreesToRand(double degrees) => degrees / 180d * Math.PI;
+    
+    /**
+     * One step is considered the movement of a leg from center to front and moving back to center
+     */
+    private float WalkLegRotation(double stepsWalked) => (float)legWalkAngle * (float)Math.Sin(Math.PI * stepsWalked);
 
-    private float walkLegRotation(double stepRadPerSec, double timeWalked)
-    {
-        return (float)legWalkAngle * (float)Math.Sin(stepRadPerSec * timeWalked);
-    }
-
-    private float LeftFootFrontDistance()
-    { 
-        return FootDistance(legLeftJoint);
-    }
-
-    private float RightFootFrontDistance()
-    {
-        return FootDistance(legLeftJoint);
-    }
-
-    private float FootDistance(Transform legJoint)
-    {
-        return (float)Math.Sin(legJoint.localRotation.x) * legLength;
-    }
+    private float FootDistanceByLegRotation(double legRotation) => (float)Math.Sin(DegreesToRand(legRotation)) * legLength;
+    
 }

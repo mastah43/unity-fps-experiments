@@ -10,7 +10,7 @@ public class CosmoPlayerInputController : MonoBehaviour
 
     public GameObject boxBlueprint;
     public double timeSecsCraft = 0.3;
-    public float distanceMaxCraft = 10;
+    public float distanceMaxCraft = 10000;
 
     private double timeLastCraft;
     private double boxSize;
@@ -70,11 +70,16 @@ public class CosmoPlayerInputController : MonoBehaviour
 
     private Vector3 GetCraftPosition(RaycastHit hit)
     {
+        var cameraPosition = camera1.transform.position;
+        var forward = camera1.transform.TransformDirection(Vector3.forward) * 10;
+        Debug.DrawRay(cameraPosition, forward, Color.red, 3);
+        //Debug.DrawRay(cameraPosition, hit.point - cameraPosition, Color.green, 3);
+        
         // TODO use a different approach by finding the plane of the box we hit and use their position
         // for the new box since this approach here will have problems when the hit was close to the existing boxes edge
-        var spaceToHit = (float)boxSize / 2f; 
+        var spaceToHit = (float)boxSize / 3f; 
         var hitPointWithDistance =
-            Vector3.MoveTowards(camera1.transform.position, hit.point, hit.distance - spaceToHit);
+            Vector3.MoveTowards(cameraPosition, hit.point, hit.distance - spaceToHit);
         Logger.Log($"Craft position: hit.point={hit.point}, hitPointWithDistance={hitPointWithDistance}, hit.distance={hit.distance}, spaceToHit={spaceToHit}");
         return new Vector3(
             x: GetGridAlignedCoordinateElement(hitPointWithDistance.x),
