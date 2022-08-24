@@ -1,5 +1,5 @@
 ﻿using UnityEngine;
-using Unity.InteractiveTutorials;
+using Unity.Tutorials.Core.Editor;
 using UnityEditor;
 using UnityEngine.AI;
 
@@ -10,8 +10,9 @@ namespace Unity.Tutorials
     /// </summary>
     public class TutorialCallbacks : ScriptableObject
     {
-        public FutureObjectReference futureRoomInstance = default;
-        public FutureObjectReference futureBotInstance = default;
+        // TODO FutureObjectReference was removed / changed from unity
+        //public FutureObjectReference futureRoomInstance = default;
+        //public FutureObjectReference futureBotInstance = default;
         NavMeshSurface navMeshSurface = default;
 
         public bool NavMeshIsBuilt()
@@ -34,7 +35,8 @@ namespace Unity.Tutorials
         /// </summary>
         public void KeepRoomSelected()
         {
-            SelectSpawnedGameObject(futureRoomInstance);
+            // TODO FutureObjectReference was removed / changed from unity
+            //SelectSpawnedGameObject(futureRoomInstance);
         }
 
         /// <summary>
@@ -42,7 +44,8 @@ namespace Unity.Tutorials
         /// </summary>
         public void KeepBotSelected()
         {
-            SelectSpawnedGameObject(futureBotInstance);
+            // TODO FutureObjectReference was removed / changed from unity
+            //SelectSpawnedGameObject(futureBotInstance);
         }
 
 
@@ -52,8 +55,9 @@ namespace Unity.Tutorials
         /// <param name="futureObjectReference"></param>
         public void SelectSpawnedGameObject(FutureObjectReference futureObjectReference)
         {
-            if (futureObjectReference.sceneObjectReference == null) { return; }
-            Selection.activeObject = futureObjectReference.sceneObjectReference.ReferencedObjectAsGameObject;
+            // TODO FutureObjectReference was removed / changed from unity
+            //if (futureObjectReference.sceneObjectReference == null) { return; }
+            //Selection.activeObject = futureObjectReference.sceneObjectReference.ReferencedObjectAsGameObject;
         }
 
         public void SelectMoveTool()
