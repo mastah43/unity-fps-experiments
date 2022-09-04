@@ -377,7 +377,7 @@ node_modules/
 *.dsw
 *.dsp
 
-# Visual Studio 6 technical files 
+# Visual Studio 6 technical files
 *.ncb
 *.aps
 
@@ -502,3 +502,7 @@ Icon
 Network Trash Folder
 Temporary Items
 .apdisk
+
+
+# Blender
+.blend1
